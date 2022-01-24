@@ -81,6 +81,7 @@
     user-select: none;
     transition: color 0.15s linear;
     margin-left: 5px;
+    cursor: pointer;
 }
 
 #logo:hover

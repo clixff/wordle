@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from '../styles/Main.module.css'
 import { FocusEvent } from 'react'
+import Link from 'next/link';
+import Image from 'next/image'
+
 
 export function randomInteger(min: number, max: number): number 
 {
@@ -46,9 +49,13 @@ export function Navbar(): JSX.Element
 {
     return (<div id={styles.navbar}> 
         <div id={styles['navbar-content']}>
-            <a href="/" id={styles.logo}> Endless Wordle  </a>
+            <Link href="/" passHref> 
+                <div id={styles.logo}>
+                    Endless Wordle
+                </div>  
+            </Link>
             <div id={styles['navbar-right']}>
-                <a href="https://github.com/clixff/wordle" target="_blank">
+                <a href="https://github.com/clixff/wordle" target="_blank" rel="noreferrer">
                     <button id={styles['github-btn']} tabIndex={-1}>
                         <IconGithub />
                     </button>
@@ -125,7 +132,7 @@ function GameTile(props: { tile: IGameTileData, index: number, row: number, setC
                 break;
         }
         props.setClearAnimation(props.row, props.index, animationDuration);
-    }, [props.tile.animation])
+    }, [props.tile.animation, animClassName.length, props])
 
     return (<div ref={tileRef} id={`game-tile-${props.row}-${props.index}`} className={`${styles['game-tile']} ${getTileClassNameByType(props.tile.type)} ${animClassName}`}>
         {
@@ -319,7 +326,7 @@ export function GameEndNotification(props: IGameEndNotification): JSX.Element
         <div id={styles['game-end-modal']}>
             <div id={styles['game-end-container']}>
                 <div id={styles['game-end-icon']}>
-                    <img src={props.bWin ? "/images/smile_face.png" : "/images/sad_face.png" } width={80} height={80}/>
+                    <Image src={props.bWin ? "/images/smile_face.png" : "/images/sad_face.png" } width={80} height={80} alt={""}/>
                 </div>
                 <div id={styles['game-end-title']}>
                     {
@@ -366,7 +373,7 @@ export function GameEndNotification(props: IGameEndNotification): JSX.Element
                 </div>
 
                 <div id={styles['game-end-buttons']}>
-                    <a href={`https://twitter.com/intent/tweet?text=${getTwitterText()}`} target="_blank"> 
+                    <a href={`https://twitter.com/intent/tweet?text=${getTwitterText()}`} target="_blank" rel="noreferrer"> 
                         <button id={styles['game-end-button-twitter']} >
                             <IcontTwitter />
                             Share On Twitter
