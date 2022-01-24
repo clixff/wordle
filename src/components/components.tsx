@@ -316,7 +316,7 @@ export function GameEndNotification(props: IGameEndNotification): JSX.Element
             str += '\n'
         }
 
-        str += 'https://google.com';
+        str += 'https://wordle-game.vercel.app/';
 
         return encodeURIComponent(str);
     }
