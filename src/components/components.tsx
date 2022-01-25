@@ -3,6 +3,7 @@ import styles from '../styles/Main.module.css'
 import { FocusEvent } from 'react'
 import Link from 'next/link';
 import Image from 'next/image'
+import { IGameSaveData } from '../pages';
 
 
 export function randomInteger(min: number, max: number): number 
@@ -279,6 +280,7 @@ interface IGameEndNotification
     row: number;
     maxRows: number;
     tiles: TileSet;
+    saveData: IGameSaveData;
 }
 
 export function GameEndNotification(props: IGameEndNotification): JSX.Element
@@ -371,7 +373,19 @@ export function GameEndNotification(props: IGameEndNotification): JSX.Element
                         })
                     }
                 </div>
-
+                <div id={styles['game-end-total-score-wrapper']}>
+                    <div id={styles['game-end-score-wrapper']}>
+                        Score: <b> { props.saveData.score } </b>
+                    </div>
+                    <div id={styles['game-end-wins-loses']}>
+                        <div id={styles['game-end-wins']}>
+                            W: <b> { props.saveData.wins } </b>
+                        </div>
+                        <div id={styles['game-end-loses']}>
+                            L: <b> { props.saveData.loses } </b>
+                        </div>
+                    </div>
+                </div>
                 <div id={styles['game-end-buttons']}>
                     <a href={`https://twitter.com/intent/tweet?text=${getTwitterText()}`} target="_blank" rel="noreferrer"> 
                         <button id={styles['game-end-button-twitter']} >

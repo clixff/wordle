@@ -9,6 +9,13 @@ interface IWordsList
 	[length: string]: Array<string>
 };
 
+export interface IGameSaveData
+{
+	score: number,
+	wins: number,
+	loses: number
+}
+
 interface IGameState
 {
 	tiles: TileSet;
@@ -20,7 +27,8 @@ interface IGameState
 	currentRow: number;
 	notificationText: string,
 	bGameEnded: boolean,
-	bWin: boolean
+	bWin: boolean,
+	saveData: IGameSaveData
 };
 
 class Game extends React.Component<{}, IGameState>
@@ -40,7 +48,13 @@ class Game extends React.Component<{}, IGameState>
 			currentRow: 0,
 			notificationText: '',
 			bGameEnded: false,
-			bWin: false
+			bWin: false,
+			saveData: 
+			{
+				wins: 0,
+				loses: 0,
+				score: 0
+			}
 		};
 
 		this.generateNewWord = this.generateNewWord.bind(this);
@@ -50,6 +64,79 @@ class Game extends React.Component<{}, IGameState>
 		this.onVirtualKeyDown = this.onVirtualKeyDown.bind(this);
 		this.setClearAnimation = this.setClearAnimation.bind(this);
 		this.onGenerateNewWordClick = this.onGenerateNewWordClick.bind(this);
+	}
+
+	readSaveDataFromLocalStorage()
+	{
+		if (typeof window === 'undefined')
+		{
+			return;
+		}
+
+		const localStorageKey = 'wordle-data';
+
+		const saveData = window.localStorage.getItem(localStorageKey);
+
+		if (saveData)
+		{
+			const parsedSavaData = JSON.parse(saveData);
+			if (parsedSavaData)
+			{
+				this.setState({
+					saveData: parsedSavaData
+				});
+			}
+		}
+		else
+		{
+			window.localStorage.setItem(localStorageKey, JSON.stringify(this.state.saveData));
+		}
+	};
+
+	saveGameDataToLocalStorage(data?: IGameSaveData)
+	{
+		if (typeof window == 'undefined')
+		{
+			return;
+		}
+
+		if (!data)
+		{
+			data = this.state.saveData;
+		}
+
+		const localStorageKey = 'wordle-data';
+		window.localStorage.setItem(localStorageKey, JSON.stringify(data));
+	}
+
+	calculateNewScore(prevScore: number, bWin: boolean): number
+	{
+		console.log('calculating new score');
+		console.log(`prev score was ${prevScore}`);
+		if (!bWin)
+		{
+			prevScore -= 4;	
+		}
+		else
+		{
+			prevScore += this.state.word.length;
+			let bonus = (this.state.rowsCount - this.state.currentRow)
+			if (bonus < 0)
+			{
+				bonus = 0;
+			}
+
+			prevScore += bonus;
+		}
+
+		if (prevScore < 0)
+		{
+			prevScore = 0;
+		}
+
+		console.log(`new score is ${prevScore}`);
+
+		return prevScore;
 	}
 
 	clearKeyboard()
@@ -333,11 +420,31 @@ class Game extends React.Component<{}, IGameState>
 				bGameEnded = true;
 			}
 
+			const saveData = { ...prevState.saveData  };
+
+			if (bGameEnded)
+			{
+				saveData.score = this.calculateNewScore(prevState.saveData.score, bWin);
+				if (bWin)
+				{
+					saveData.wins++;
+				}
+				else
+				{
+					saveData.loses++;
+				}
+
+				console.log(saveData);
+
+				this.saveGameDataToLocalStorage(saveData);
+			}
+
 			return {
 				currentRow: newRow,
 				tiles: prevState.tiles,
 				bGameEnded: bGameEnded,
-				bWin: bWin
+				bWin: bWin,
+				saveData: saveData
 			}
 		}, () =>
 		{
@@ -396,7 +503,7 @@ class Game extends React.Component<{}, IGameState>
 			clearTimeout(oldTimeout);
 		}
 
-		this.animationTimeouts.set(key, setInterval(() =>
+		this.animationTimeouts.set(key, setTimeout(() =>
 		{
 			this.setState((prevState) =>
 			{
@@ -453,6 +560,7 @@ class Game extends React.Component<{}, IGameState>
 
 	componentDidMount()
 	{
+		this.readSaveDataFromLocalStorage();
 		this.fetchWords().then(() =>
 		{
 			this.generateNewWord();
@@ -484,9 +592,15 @@ class Game extends React.Component<{}, IGameState>
 		{
 			this.setState((prevState) =>
 			{
+				const saveData = { ...prevState.saveData  };
+				saveData.loses++;
+				saveData.score = this.calculateNewScore(saveData.score, false);
+				this.saveGameDataToLocalStorage(saveData);
 				return {
 					bGameEnded: true,
-					currentRow: prevState.currentRow - 1
+					bWin: false,
+					currentRow: prevState.currentRow - 1,
+					saveData: saveData
 				}
 			});
 		}
@@ -504,7 +618,7 @@ class Game extends React.Component<{}, IGameState>
 			</Head>
 			{
 				this.state.bGameEnded ?
-					<GameEndNotification bWin={this.state.bWin} word={this.state.word} generateNewWord={this.generateNewWord} row={this.state.currentRow} maxRows={this.state.rowsCount} tiles={this.state.tiles} />
+					<GameEndNotification bWin={this.state.bWin} word={this.state.word} generateNewWord={this.generateNewWord} row={this.state.currentRow} maxRows={this.state.rowsCount} tiles={this.state.tiles} saveData={this.state.saveData} />
 				: null
 			}
 			{

@@ -528,7 +528,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
 }
 
 .game-end-tiles-row
@@ -806,6 +806,52 @@
     font-size: 42px;
     margin-bottom: 20px;
     text-transform: uppercase;
+}
+
+#game-end-total-score-wrapper
+{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+#game-end-score-wrapper
+{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    color: #edb72d;
+    font-weight: 600;
+    font-size: 22px;
+}
+
+#game-end-wins-loses
+{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 17px;
+}
+
+#game-end-score-wrapper > b
+{
+    margin-left: 5px;
+}
+
+#game-end-wins
+{
+    margin-right: 10px;
+    color: #3D8125;
+}
+
+#game-end-loses
+{
+    color: #ad2424;
 }
 
 @media screen and (max-width: 550px) 
