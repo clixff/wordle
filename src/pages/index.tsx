@@ -143,7 +143,6 @@ class Game extends React.Component<{}, IGameState>
 
 		const wordsList = this.state.words[`${newWordLength}`] || [];
 		const newWord = wordsList.length ? wordsList[randomInteger(0, wordsList.length - 1)] : '' ;
-		console.log(`New word is ${newWord}` );
 		this.setState({
 			word: newWord,
 			currentRow: 0,
