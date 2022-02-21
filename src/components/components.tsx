@@ -3,7 +3,7 @@ import styles from '../styles/Main.module.css'
 import { FocusEvent } from 'react'
 import Link from 'next/link';
 import Image from 'next/image'
-import { IGameSaveData } from '../pages';
+import { ELanguage, IGameSaveData } from '../pages';
 
 
 export function randomInteger(min: number, max: number): number 
@@ -46,8 +46,22 @@ export interface IKeyboardButton
 export type KeyboardSet = Array<Array<IKeyboardButton>>;
 
 
-export function Navbar(): JSX.Element
+interface INavbarProps
 {
+    currentLang: ELanguage;
+    OnLanguageChange: (lang: ELanguage) => void;
+}
+
+export function Navbar(props: INavbarProps): JSX.Element
+{
+    function OnLanguageSelect(lang: ELanguage)
+    {
+        if (typeof props.OnLanguageChange == 'function')
+        {
+            props.OnLanguageChange(lang);
+        }
+    };
+
     return (<div id={styles.navbar}> 
         <div id={styles['navbar-content']}>
             <Link href="/" passHref> 
@@ -56,11 +70,14 @@ export function Navbar(): JSX.Element
                 </div>  
             </Link>
             <div id={styles['navbar-right']}>
-                <a href="https://github.com/clixff/wordle" target="_blank" rel="noreferrer">
-                    <button id={styles['github-btn']} tabIndex={-1}>
-                        <IconGithub />
-                    </button>
-                </a>
+                <div id={styles['languages-list']}>
+                    {
+                        [ELanguage.English, ELanguage.Russian].map((lang) =>
+                        {
+                            return <LanguageFlagComponent key={lang} lang={lang} OnClick={OnLanguageSelect} currentLang={props.currentLang} />;
+                        })
+                    }
+                </div>
             </div>
         </div>
     </div>)
@@ -73,6 +90,7 @@ interface IGameWrapperProps
     generateNewWord: () => void;
     onVirtualKeyDown: (key: string) => void;
     setClearAnimation: ClearAnimFunc;
+    getTranslatedString: (key: string) => string;
 }
 
 function getTileClassNameByType(type: ETileType): string
@@ -132,8 +150,11 @@ function GameTile(props: { tile: IGameTileData, index: number, row: number, setC
                 }
                 break;
         }
-        props.setClearAnimation(props.row, props.index, animationDuration);
-    }, [props.tile.animation, animClassName.length, props])
+        if (props.tile.animation !== EAnimationType.None)
+        {
+            props.setClearAnimation(props.row, props.index, animationDuration);
+        }   
+    }, [props.tile.animation])
 
     return (<div ref={tileRef} id={`game-tile-${props.row}-${props.index}`} className={`${styles['game-tile']} ${getTileClassNameByType(props.tile.type)} ${animClassName}`}>
         {
@@ -159,7 +180,9 @@ export function GameWrapper(props: IGameWrapperProps): JSX.Element
         <div id={styles['game-wrapper']}>
             <div id={styles['game-top-wrapper']}>
                 <button id={styles['button-generate-new-word']} onClick={onClickGenerateNewWord} tabIndex={-1} onFocus={onFocusGenerateNewWord}>
-                    Generate new word
+                    {
+                        props.getTranslatedString('generateNewWord')
+                    }
                 </button>
             </div>
             <div id={styles['game-grid']}>
@@ -290,59 +313,25 @@ export function GameEndNotification(props: IGameEndNotification): JSX.Element
         props.generateNewWord();
     }
 
-    function getTwitterText(): string
-    {
-        let str = '';
-
-        str = '#endlessWordle #wordle'
-
-        str += ` ${props.row+1}/${props.maxRows}\n`;
-        str += `Word: ${props.word}\n\n`;
-
-        for (let i = 0; i < props.row+1; i++)
-        {
-            for (let c of props.tiles[i])
-            {
-                switch (c.type) {
-                    case ETileType.Green:
-                        str += `🟩`;
-                        break;
-                    case ETileType.Yellow:
-                        str += `🟨`;
-                        break;
-                    default:
-                        str += '⬜';
-                        break;
-                }
-            }
-            str += '\n'
-        }
-
-        str += 'https://wordle-game.vercel.app/';
-
-        return encodeURIComponent(str);
-    }
-
     return (<div id={styles['game-end-wrapper']}>
         <div id={styles['game-end-bg']} />
         <div id={styles['game-end-modal']}>
             <div id={styles['game-end-container']}>
-                <div id={styles['game-end-icon']}>
-                    <Image src={props.bWin ? "/images/smile_face.png" : "/images/sad_face.png" } width={80} height={80} alt={""}/>
-                </div>
-                <div id={styles['game-end-title']}>
-                    {
-                       props.bWin ? 'Great!' : 'You almost guessed it!'
-                    }
-                </div>
-                <div id={styles['game-end-word-was']}>
-                    The word was:
-                </div>
-                <div id={styles['game-end-word']}>
+                <div id={styles['game-end-word']} className={styles[props.bWin ? 'game-end-word-win' : 'game-end-word-lose']}>
                     {
                         props.word
                     }
                 </div>
+                {
+                    props.bWin ? 
+                    (
+                        <div id={styles['game-end-result']}>
+                            {
+                                `${props.row+1} / ${props.maxRows}`
+                            }
+                        </div>
+                    ) : null
+                }
                 <div id={styles['game-end-tiles']}>
                     {
                         props.tiles.map((row, index) =>
@@ -373,28 +362,10 @@ export function GameEndNotification(props: IGameEndNotification): JSX.Element
                         })
                     }
                 </div>
-                <div id={styles['game-end-total-score-wrapper']}>
-                    <div id={styles['game-end-score-wrapper']}>
-                        Score: <b> { props.saveData.score } </b>
-                    </div>
-                    <div id={styles['game-end-wins-loses']}>
-                        <div id={styles['game-end-wins']}>
-                            W: <b> { props.saveData.wins } </b>
-                        </div>
-                        <div id={styles['game-end-loses']}>
-                            L: <b> { props.saveData.loses } </b>
-                        </div>
-                    </div>
-                </div>
+    
                 <div id={styles['game-end-buttons']}>
-                    <a href={`https://twitter.com/intent/tweet?text=${getTwitterText()}`} target="_blank" rel="noreferrer"> 
-                        <button id={styles['game-end-button-twitter']} >
-                            <IcontTwitter />
-                            Share On Twitter
-                        </button>
-                    </a>
                     <button id={styles['game-end-button-continue']} onClick={onClickPlay}>
-                        Continue Playing
+                        Start Again
                     </button>
                 </div>
             </div>
@@ -415,4 +386,26 @@ export function IconBackspace(): JSX.Element
 export function IcontTwitter(): JSX.Element
 {
     return (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>);
+}
+
+interface ILanguageFlagProps
+{
+    lang: ELanguage;
+    currentLang: ELanguage;
+    OnClick: (lang: ELanguage) => void;
+};
+
+export function LanguageFlagComponent(props: ILanguageFlagProps): JSX.Element
+{
+    function OnClick()
+    {
+        if (typeof props.OnClick == 'function')
+        {
+            props.OnClick(props.lang);
+        }
+    };
+
+    return (<div className={`${styles['language-flag']} ${props.lang == props.currentLang ? styles['language-flag-active'] : ''}`} onClick={OnClick}>
+        <img src={`/images//flags/${props.lang}.png`} />
+    </div>);
 }

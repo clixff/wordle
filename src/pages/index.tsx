@@ -6,14 +6,27 @@ import styles from '../styles/Main.module.css'
 
 interface IWordsList
 {
-	[length: string]: Array<string>
+	[lang: string]: {
+		[length: string]: Array<string>
+	};
 };
+
+export enum ELanguage
+{
+	English = "en",
+	Russian = "ru"
+}
 
 export interface IGameSaveData
 {
-	score: number,
-	wins: number,
-	loses: number
+	lang: ELanguage
+}
+
+export interface ILocaleData
+{
+	[lang: string]: {
+		[key: string]: string;
+	};
 }
 
 interface IGameState
@@ -28,7 +41,8 @@ interface IGameState
 	notificationText: string,
 	bGameEnded: boolean,
 	bWin: boolean,
-	saveData: IGameSaveData
+	saveData: IGameSaveData;
+	localeData: ILocaleData;
 };
 
 class Game extends React.Component<{}, IGameState>
@@ -51,19 +65,21 @@ class Game extends React.Component<{}, IGameState>
 			bWin: false,
 			saveData: 
 			{
-				wins: 0,
-				loses: 0,
-				score: 0
-			}
+				lang: ELanguage.English
+			},
+			localeData: {}
 		};
 
 		this.generateNewWord = this.generateNewWord.bind(this);
 		this.onKeyDown = this.onKeyDown.bind(this);
 		this.onNewKeyPressed = this.onNewKeyPressed.bind(this);
 		this.fetchWords = this.fetchWords.bind(this);
+		this.fetchLocaleData = this.fetchLocaleData.bind(this);
 		this.onVirtualKeyDown = this.onVirtualKeyDown.bind(this);
 		this.setClearAnimation = this.setClearAnimation.bind(this);
 		this.onGenerateNewWordClick = this.onGenerateNewWordClick.bind(this);
+		this.onLanguageChange = this.onLanguageChange.bind(this);
+		this.getTranslatedString = this.getTranslatedString.bind(this);
 	}
 
 	readSaveDataFromLocalStorage()
@@ -89,7 +105,24 @@ class Game extends React.Component<{}, IGameState>
 		}
 		else
 		{
-			window.localStorage.setItem(localStorageKey, JSON.stringify(this.state.saveData));
+			let lang = ELanguage.English;
+			
+			if (window && window.navigator && window.navigator.language)
+			{
+				if (window.navigator.language.startsWith("ru"))
+				{
+					lang = ELanguage.Russian;
+				}
+			}
+
+			this.setState((prevState) => {
+				prevState.saveData.lang = lang;
+				window.localStorage.setItem(localStorageKey, JSON.stringify(prevState.saveData));
+
+				return {
+					saveData: prevState.saveData
+				};
+			});
 		}
 	};
 
@@ -109,41 +142,18 @@ class Game extends React.Component<{}, IGameState>
 		window.localStorage.setItem(localStorageKey, JSON.stringify(data));
 	}
 
-	calculateNewScore(prevScore: number, bWin: boolean): number
-	{
-		console.log('calculating new score');
-		console.log(`prev score was ${prevScore}`);
-		if (!bWin)
-		{
-			prevScore -= 4;	
-		}
-		else
-		{
-			prevScore += this.state.word.length;
-			let bonus = (this.state.rowsCount - this.state.currentRow)
-			if (bonus < 0)
-			{
-				bonus = 0;
-			}
-
-			prevScore += bonus;
-		}
-
-		if (prevScore < 0)
-		{
-			prevScore = 0;
-		}
-
-		console.log(`new score is ${prevScore}`);
-
-		return prevScore;
-	}
-
 	clearKeyboard()
 	{
-		const keys: Array<string> = [
-			'QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'
-		];
+		let keys: Array<string> = [];
+
+		switch (this.state.saveData.lang) {
+			case ELanguage.English:
+				keys = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+				break;
+			case ELanguage.Russian:
+				keys = ['ЙЦУКЕНГШЩЗХЪ', 'ФЫВАПРОЛДЖЭ', 'ЯЧСМИТЬБЮ'];
+				break;
+		}
 
 		const newKeyboardSet: KeyboardSet = [];
 
@@ -183,6 +193,35 @@ class Game extends React.Component<{}, IGameState>
 		});
 	};
 
+	fetchLocaleData(): Promise<void>
+	{
+		const callback = async (resolve: any) =>
+		{
+			try
+			{
+				const res = await fetch(`/translate.json`);
+				const jsonRes = (await res.json());
+
+				if (jsonRes)
+				{
+					this.setState({
+						localeData: jsonRes
+					},  resolve);
+				}
+				else
+				{
+					resolve();
+				}
+			}
+			catch (err)
+			{
+				console.error(err);
+			}
+		};
+
+		return new Promise(callback);
+	}
+
 	fetchWords(): Promise<void>
 	{
 		const callback = async (resolve: any) =>
@@ -190,13 +229,22 @@ class Game extends React.Component<{}, IGameState>
 			try
 			{
 				const res = await fetch(`/words.json`);
-				const jsonRes = await res.json();
+				const jsonRes = (await res.json()) as {
+					[lang: string]: {
+						[length: string]: string
+					}
+				};
 	
 				const wordsObject: IWordsList = {};
 	
-				for (let key in jsonRes)
+				
+				for (let lang in jsonRes)
 				{
-					wordsObject[key] = jsonRes[key].split(' ');
+					wordsObject[lang] = {};
+					for (let length in jsonRes[lang])
+					{
+						wordsObject[lang][length] = jsonRes[lang][length].split(' ');
+					}
 				}
 
 	
@@ -228,7 +276,7 @@ class Game extends React.Component<{}, IGameState>
 		this.clearTiles(newWordLength, this.state.rowsCount);
 		this.clearKeyboard();
 
-		const wordsList = this.state.words[`${newWordLength}`] || [];
+		const wordsList = this.state.words[this.state.saveData.lang][`${newWordLength}`] || [];
 		const newWord = wordsList.length ? wordsList[randomInteger(0, wordsList.length - 1)] : '' ;
 		this.setState({
 			word: newWord,
@@ -383,14 +431,14 @@ class Game extends React.Component<{}, IGameState>
 
 		if (word.length != this.state.word.length)
 		{
-			this.showNotification('Not enough characters');
+			this.showNotification(this.getTranslatedString('notEnoughCharacters'));
 			this.playAnimationAllRow(this.state.currentRow, EAnimationType.Shake);
 			return;
 		}
 
-		if (!this.state.words[`${word.length}`].includes(word))
+		if (!this.state.words[this.state.saveData.lang][`${word.length}`].includes(word))
 		{
-			this.showNotification('This word is not in the words list');
+			this.showNotification(this.getTranslatedString('notInWordsList'));
 			this.playAnimationAllRow(this.state.currentRow, EAnimationType.Shake);
 			return;
 		}
@@ -424,19 +472,6 @@ class Game extends React.Component<{}, IGameState>
 
 			if (bGameEnded)
 			{
-				saveData.score = this.calculateNewScore(prevState.saveData.score, bWin);
-				if (bWin)
-				{
-					saveData.wins++;
-				}
-				else
-				{
-					saveData.loses++;
-				}
-
-				console.log(saveData);
-
-				this.saveGameDataToLocalStorage(saveData);
 			}
 
 			return {
@@ -459,10 +494,28 @@ class Game extends React.Component<{}, IGameState>
 			return;
 		}
 
-		if (event.code.length == 4 && event.code.startsWith('Key'))
+		if (event.key.length == 1)
 		{
-			const char = event.code[3].toLowerCase();
-			this.onNewKeyPressed(char);
+			const char = event.key.toLowerCase();
+			let minIndex = 0;
+			let maxIndex = 0;
+			const charCode = char.charCodeAt(0);
+			switch (this.state.saveData.lang) {
+				case ELanguage.English:
+					minIndex = 97;
+					maxIndex = 122;
+					break;
+				case ELanguage.Russian:
+					minIndex = 1072;
+					maxIndex = 1103;
+					break;
+			}
+
+			if (charCode >= minIndex && charCode <= maxIndex)
+			{
+				this.onNewKeyPressed(char);
+			}
+
 		}
 		else if (event.code == 'Backspace')
 		{
@@ -558,13 +611,13 @@ class Game extends React.Component<{}, IGameState>
 		}
 	}
 
-	componentDidMount()
+	async componentDidMount()
 	{
 		this.readSaveDataFromLocalStorage();
-		this.fetchWords().then(() =>
-		{
-			this.generateNewWord();
-		});
+		await this.fetchLocaleData();
+		await this.fetchWords();
+		this.generateNewWord();
+
 
 		if (typeof window != 'undefined')
 		{
@@ -582,6 +635,22 @@ class Game extends React.Component<{}, IGameState>
 		this.clearNotificationTimer();
 	}
 
+	onLanguageChange(lang: ELanguage)
+	{
+		this.setState((prevState) =>
+		{
+			prevState.saveData.lang = lang;
+			return {
+				saveData: prevState.saveData
+			}
+		}, 
+		() =>
+		{
+			this.generateNewWord();
+			this.saveGameDataToLocalStorage();
+		});
+	}
+
 	onGenerateNewWordClick()
 	{
 		if (this.state.currentRow == 0)
@@ -592,18 +661,44 @@ class Game extends React.Component<{}, IGameState>
 		{
 			this.setState((prevState) =>
 			{
-				const saveData = { ...prevState.saveData  };
-				saveData.loses++;
-				saveData.score = this.calculateNewScore(saveData.score, false);
-				this.saveGameDataToLocalStorage(saveData);
 				return {
 					bGameEnded: true,
 					bWin: false,
-					currentRow: prevState.currentRow - 1,
-					saveData: saveData
+					currentRow: prevState.currentRow - 1
 				}
 			});
 		}
+	}
+
+	getTranslatedString(key: string): string
+	{
+		const lang = this.state.saveData.lang;
+
+		if (!this.state.localeData[ELanguage.English])
+		{
+			return '';
+		}
+
+		if (this.state.localeData[lang])
+		{
+			if (this.state.localeData[lang][key])
+			{
+				return this.state.localeData[lang][key];
+			}
+			else if (this.state.localeData[ELanguage.English][key])
+			{
+				return this.state.localeData[ELanguage.English][key];
+			}
+		}
+		else
+		{
+			if (this.state.localeData[ELanguage.English][key])
+			{
+				return this.state.localeData[ELanguage.English][key];
+			}
+		}
+
+		return '';
 	}
 
 	render()
@@ -626,8 +721,8 @@ class Game extends React.Component<{}, IGameState>
 					<TopNotification text={this.state.notificationText} />
 				) : null
 			}
-			<Navbar />
-			<GameWrapper tileSet={this.state.tiles} keyboard={this.state.keyboardSet} generateNewWord={this.onGenerateNewWordClick} onVirtualKeyDown={this.onVirtualKeyDown} setClearAnimation={this.setClearAnimation} />
+			<Navbar currentLang={this.state.saveData.lang} OnLanguageChange={this.onLanguageChange} />
+			<GameWrapper tileSet={this.state.tiles} keyboard={this.state.keyboardSet} generateNewWord={this.onGenerateNewWordClick} onVirtualKeyDown={this.onVirtualKeyDown} setClearAnimation={this.setClearAnimation} getTranslatedString={this.getTranslatedString} />
 			</div>
 		);
 	}

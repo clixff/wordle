@@ -53,26 +53,6 @@
     justify-content: center;
 }
 
-#github-btn
-{
-    background: transparent;
-    outline: none;
-    appearance: none;
-    padding: 0;
-}
-
-#github-btn > svg
-{
-    fill: white;
-    --size: 20px;
-    transition: fill 100ms linear;
-}
-
-#github-btn:hover > svg
-{
-    fill: #ccc;
-}
-
 #logo
 {
     font-weight: 700;
@@ -349,16 +329,16 @@
     font-weight: 600;
     font-size: 15px;
     color: white;
-    background: #0066cd;
+    background: #0052cd;
     border-radius: 5px;
     margin-bottom: 20px; 
     transition: background-color 0.1s linear;
     padding: 15px 15px;
 }
 
-#button-generate-new-word:active
+#button-generate-new-word:hover
 {
-    background: #0536a7;
+    background: #0047b1;
 }
 
 #keyboard-set
@@ -785,21 +765,6 @@
     background: #0536a7;
 }
 
-#game-end-title
-{
-    margin-bottom: 10px;
-    font-weight: 700;
-    font-size: 34px;
-}
-
-#game-end-word-was
-{
-    font-weight: 600;
-    font-size: 26px;
-    margin-bottom: 0px;
-    color: rgb(235, 235, 235);
-}
-
 #game-end-word
 {
     font-weight: 700;
@@ -1050,4 +1015,64 @@
     {
         --width: 40px;
     }
+}
+
+/* .game-end-word-win
+{
+    color: #3D8125 !important;
+}
+
+.game-end-word-lose
+{
+    color: #eb3232 !important;
+} */
+
+#languages-list
+{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+
+.language-flag
+{
+    cursor: pointer;
+    width: 32px;
+    transition: opacity 0.1s linear;
+}
+
+.language-flag, .language-flag > img
+{
+    border-radius: 3px;
+}
+
+.language-flag:not(:last-child)
+{
+    margin-right: 15px;
+}
+
+.language-flag:not(.language-flag-active)
+{
+    opacity: 0.35;
+}
+
+.language-flag:not(.language-flag-active):hover
+{
+    opacity: 0.75;
+}
+
+.language-flag > img
+{
+    width: inherit;
+    height: inherit;
+}
+
+#game-end-result
+{
+    font-weight: 600;
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: #ccc;
 }

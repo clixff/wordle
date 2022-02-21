@@ -1,0 +1,14 @@
+{
+    "en":
+    {
+        "generateNewWord": "Generate new word",
+        "notEnoughCharacters": "Not enough characters",
+        "notInWordsList": "This word is not in the words list"
+    },
+    "ru":
+    {
+        "generateNewWord": "Новое слово",
+        "notEnoughCharacters": "Недостаточно символов",
+        "notInWordsList": "Слово не найдено"
+    }
+}
