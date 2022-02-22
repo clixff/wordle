@@ -304,6 +304,8 @@ interface IGameEndNotification
     maxRows: number;
     tiles: TileSet;
     saveData: IGameSaveData;
+    getTranslatedString: (key: string) => string;
+
 }
 
 export function GameEndNotification(props: IGameEndNotification): JSX.Element
@@ -365,7 +367,9 @@ export function GameEndNotification(props: IGameEndNotification): JSX.Element
     
                 <div id={styles['game-end-buttons']}>
                     <button id={styles['game-end-button-continue']} onClick={onClickPlay}>
-                        Start Again
+                        {
+                            props.getTranslatedString("startAgain")
+                        }
                     </button>
                 </div>
             </div>

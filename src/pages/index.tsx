@@ -713,7 +713,7 @@ class Game extends React.Component<{}, IGameState>
 			</Head>
 			{
 				this.state.bGameEnded ?
-					<GameEndNotification bWin={this.state.bWin} word={this.state.word} generateNewWord={this.generateNewWord} row={this.state.currentRow} maxRows={this.state.rowsCount} tiles={this.state.tiles} saveData={this.state.saveData} />
+					<GameEndNotification bWin={this.state.bWin} word={this.state.word} generateNewWord={this.generateNewWord} row={this.state.currentRow} maxRows={this.state.rowsCount} tiles={this.state.tiles} saveData={this.state.saveData} getTranslatedString={this.getTranslatedString} />
 				: null
 			}
 			{

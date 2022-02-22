@@ -3,12 +3,14 @@
     {
         "generateNewWord": "Generate new word",
         "notEnoughCharacters": "Not enough characters",
-        "notInWordsList": "This word is not in the words list"
+        "notInWordsList": "This word is not in the words list",
+        "startAgain": "Start Again"
     },
     "ru":
     {
         "generateNewWord": "Новое слово",
         "notEnoughCharacters": "Недостаточно символов",
-        "notInWordsList": "Слово не найдено"
+        "notInWordsList": "Слово не найдено",
+        "startAgain": "Начать сначала"
     }
 }
